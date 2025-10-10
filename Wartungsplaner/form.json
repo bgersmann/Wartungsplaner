@@ -1,0 +1,9 @@
+{
+    "elements": [
+        {
+            "type": "Label",
+            "label": "Wartungsplaner - Verwaltung von Wartungsaufgaben"
+        }
+    ],
+    "actions": []
+}

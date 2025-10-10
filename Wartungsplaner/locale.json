@@ -1,0 +1,29 @@
+{
+    "translations": {
+        "de": {
+            "Maintenance Planner": "Wartungsplaner",
+            "Title": "Titel",
+            "Description": "Beschreibung",
+            "Interval": "Intervall",
+            "Due Date": "Fälligkeitsdatum",
+            "Status": "Status",
+            "Days": "Tage",
+            "New Maintenance Task": "Neue Wartungsaufgabe",
+            "Description of the maintenance task": "Beschreibung der Wartungsaufgabe",
+            "Weekly": "Wöchentlich",
+            "Monthly": "Monatlich",
+            "Quarterly": "Quartalsweise",
+            "Semi-annually": "Halbjährlich",
+            "Annually": "Jährlich",
+            "Start Date": "Startdatum",
+            "Notification Time (Hour)": "Benachrichtigungszeit (Stunde)",
+            "hour": "Uhr",
+            "Maintenance Tasks": "Wartungsaufgaben",
+            "Check due tasks now": "Fällige Aufgaben jetzt prüfen",
+            "Note: Enter start date in format DD.MM.YYYY (e.g. 10.10.2025)": "Hinweis: Startdatum im Format TT.MM.JJJJ eingeben (z.B. 10.10.2025)",
+            "No maintenance tasks available.": "Keine Wartungsaufgaben vorhanden.",
+            "Please add tasks in the module configuration.": "Bitte fügen Sie Aufgaben in der Modulkonfiguration hinzu.",
+            "Maintenance Planner - Management of maintenance tasks": "Wartungsplaner - Verwaltung von Wartungsaufgaben"
+        }
+    }
+}
