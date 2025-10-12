@@ -12,6 +12,7 @@ class Wartungsplaner extends IPSModule
         // Eigenschaften
         $this->RegisterPropertyString('Tasks', '[]');
         $this->RegisterPropertyInteger('NotificationTime', 9); // Uhrzeit für Benachrichtigung (9 Uhr)
+        $this->RegisterPropertyInteger('WebFrontID', 0); // WebFront ID für Benachrichtigungen
         
         // Timer für tägliche Benachrichtigung
         $this->RegisterTimer('DailyNotification', 0, 'WP_CheckDueTasks($_IPS[\'TARGET\']);');
@@ -160,13 +161,16 @@ class Wartungsplaner extends IPSModule
 
     private function SendNotification(string $title, string $description, string $taskId)
     {
+        $webFrontID = $this->ReadPropertyInteger('WebFrontID');
+        
         // Sende Benachrichtigung über WebFront
-        if (IPS_FunctionExists('VISU_PostNotificationEx')) {
+        if (IPS_FunctionExists('VISU_PostNotificationEx') && $webFrontID > 0) {
             VISU_PostNotificationEx(
-                '',
+                $webFrontID,
                 $title,
                 $description,
                 'Hammer',
+                'buzzer',
                 0
             );
         }
@@ -643,6 +647,12 @@ HTML;
                     'minimum' => 0,
                     'maximum' => 23,
                     'suffix' => 'hour'
+                ],
+                [
+                    'type' => 'SelectInstance',
+                    'name' => 'WebFrontID',
+                    'caption' => 'WebFront for Notifications',
+                    'moduleID' => '{3565B1F2-8F7B-4311-A4B6-1BF1D868F39E}' // WebFront Module GUID
                 ],
                 [
                     'type' => 'List',
