@@ -137,7 +137,7 @@ class Wartungsplaner extends IPSModule
                 ];
             }
 
-            // Prüfe ob Aufgabe fällig ist
+            // Prüfe ob Aufgabe fällig ist - sende täglich Benachrichtigung bis erledigt
             if ($taskStates[$taskId]['nextDueDate'] <= $today && !$taskStates[$taskId]['completed']) {
                 // Sende Benachrichtigung
                 $this->SendNotification($task['Title'], $task['Description'], $taskId);
@@ -194,7 +194,7 @@ class Wartungsplaner extends IPSModule
                 break;
             case 'Monatlich':
             case 'Monthly':
-                // Monatlich: addiere Monate
+                // Monatlich: addiere Monate bis das Datum in der Zukunft liegt
                 while ($current <= $now) {
                     $current = strtotime('+1 month', $current);
                 }
@@ -221,7 +221,11 @@ class Wartungsplaner extends IPSModule
                 }
                 return $current;
             default:
-                $intervalDays = 30; // Standard: Monatlich
+                // Standard: Monatlich falls unbekanntes Intervall
+                while ($current <= $now) {
+                    $current = strtotime('+1 month', $current);
+                }
+                return $current;
         }
 
         // Für tages-basierte Intervalle
@@ -412,16 +416,17 @@ class Wartungsplaner extends IPSModule
             
             // Icon nur für fällige Aufgaben
             $actionIcon = $isDue ? 
-                "<i class='fas fa-check action-icon' onclick=\"completeTask('$taskId')\"></i> " : 
+                "<i class='fas fa-check action-icon' onclick=\"completeTask('$taskId')\"></i>" : 
                 '';
             
             $taskRows .= <<<HTML
                 <tr>
-                    <td class="task-title-cell">$actionIcon$title</td>
+                    <td class="task-title-cell">$title</td>
                     <td class="task-description-cell">$description</td>
                     <td class="task-interval-cell">$interval</td>
                     <td class="task-date-cell">$dueDateFormatted</td>
                     <td class="task-badge-cell"><span class="badge $badgeClass">$daysText</span></td>
+                    <td class="task-action-cell">$actionIcon</td>
                 </tr>
 HTML;
         }
@@ -515,6 +520,11 @@ HTML;
         text-align: right;
         min-width: 100px;
     }
+    .task-action-cell {
+        text-align: center;
+        min-width: 60px;
+        width: 60px;
+    }
     .badge {
         display: inline-block;
         padding: 6px 16px;
@@ -556,6 +566,7 @@ HTML;
                 <th><script>document.write(translate('Interval'));</script></th>
                 <th><script>document.write(translate('Due Date'));</script></th>
                 <th><script>document.write(translate('Status'));</script></th>
+                <th><script>document.write(translate('Action'));</script></th>
             </tr>
         </thead>
         <tbody>
