@@ -328,6 +328,20 @@ class Wartungsplaner extends IPSModule
             ];
         }
 
+        // Sortiere nach nächster Fälligkeit (fällige zuerst, dann nach Datum)
+        usort($taskList, function($a, $b) {
+            // Fällige Aufgaben haben Priorität
+            if ($a['isDue'] && !$b['isDue']) {
+                return -1;
+            }
+            if (!$a['isDue'] && $b['isDue']) {
+                return 1;
+            }
+            
+            // Wenn beide fällig oder beide nicht fällig, sortiere nach Datum
+            return $a['nextDueDate'] - $b['nextDueDate'];
+        });
+
         return json_encode($taskList);
     }
 
@@ -380,6 +394,20 @@ class Wartungsplaner extends IPSModule
                 'daysUntilDue' => $daysUntilDue
             ];
         }
+
+        // Sortiere nach nächster Fälligkeit (fällige zuerst, dann nach Datum)
+        usort($taskList, function($a, $b) {
+            // Fällige Aufgaben haben Priorität
+            if ($a['isDue'] && !$b['isDue']) {
+                return -1;
+            }
+            if (!$a['isDue'] && $b['isDue']) {
+                return 1;
+            }
+            
+            // Wenn beide fällig oder beide nicht fällig, sortiere nach Datum
+            return $a['nextDueDate'] - $b['nextDueDate'];
+        });
 
         return $taskList;
     }
