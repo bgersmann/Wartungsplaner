@@ -170,7 +170,7 @@ class Wartungsplaner extends IPSModule
                 $title,
                 $description,
                 'Hammer',
-                'buzzer',
+                'clock',
                 0
             );
         }
