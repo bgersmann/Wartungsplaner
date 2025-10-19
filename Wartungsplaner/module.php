@@ -465,47 +465,41 @@ HTML;
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-        background: #2b2d31;
-        padding: 0;
-        color: #dcddde;
+        padding: 0;       
     }
     .container { 
         max-width: 100%; 
-        margin: 0 auto;
-        background: #2b2d31;
+        margin: 0 auto;       
     }
     .header {
         display: flex;
         align-items: center;
-        padding: 16px 20px;
-        background: #1e1f22;
+        padding: 16px 20px;        
         border-bottom: 1px solid #3f4147;
         gap: 12px;
     }
     .header-icon {
         font-size: 24px;
-        color: #dcddde;
     }
     .header-title {
         font-size: 18px;
-        font-weight: 600;
-        color: #dcddde;
+        font-weight: 600;        
     }
     table {
         width: 100%;
         border-collapse: collapse;
-        background: #2b2d31;
     }
     thead {
         background: #1e1f22;
         border-bottom: 1px solid #3f4147;
     }
     th {
+        background: var(--accent-color);
         padding: 12px 20px;
         text-align: left;
         font-size: 13px;
         font-weight: 600;
-        color: #b5bac1;
+        color: var(--content-color);
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
@@ -520,10 +514,9 @@ HTML;
         font-size: 15px;
     }
     tr:hover td {
-        background: #32353b;
     }
     .task-title-cell {
-        color: #dcddde;
+        color: var(--content-color);
         align-items: center;
         gap: 12px;
         min-width: 200px;
@@ -533,15 +526,15 @@ HTML;
         vertical-align: middle;
     }
     .task-description-cell {
-        color: #b5bac1;
+        color: var(--content-color);
         min-width: 250px;
     }
     .task-interval-cell {
-        color: #b5bac1;
+        color: var(--content-color);
         min-width: 120px;
     }
     .task-date-cell {
-        color: #b5bac1;
+        color: var(--content-color);
         min-width: 120px;
     }
     .task-badge-cell {
