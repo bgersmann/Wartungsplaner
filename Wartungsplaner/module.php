@@ -169,8 +169,8 @@ class Wartungsplaner extends IPSModule
                 $webFrontID,
                 $title,
                 $description,
-                'Hammer',
-                'clock',
+                'screwdriver-wrench',
+                'buzzer',
                 0
             );
         }
