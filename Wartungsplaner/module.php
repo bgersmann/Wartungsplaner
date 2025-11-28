@@ -418,219 +418,216 @@ class Wartungsplaner extends IPSModule
             return $this->GenerateEmptyHTML();
         }
 
-        $taskRows = '';
-        
+        $enrichedTasks = [];
         foreach ($tasks as $task) {
             $daysUntilDue = $task['daysUntilDue'];
             $isDue = $task['isDue'];
-            
             $dueDateFormatted = date('d.m.Y', $task['nextDueDate']);
             $title = htmlspecialchars($task['title']);
             $description = htmlspecialchars($task['description']);
             $interval = htmlspecialchars($task['interval']);
-            $taskId = $task['id'];
-            
-            // Berechne Badge-Farbe basierend auf Tagen
+
             if ($isDue || $daysUntilDue < 0) {
-                $badgeClass = 'badge-red';
-                $daysText = abs($daysUntilDue) . ' <script>document.write(translate(\'Days\'));</script>';
+                $iconClass = 'icon--red';
+                $badgeClass = 'red';
+                $statusLabel = 'Überfällig';
+                $badgeText = $daysUntilDue < 0
+                    ? 'vor ' . abs($daysUntilDue) . ' Tagen'
+                    : 'Heute fällig';
             } elseif ($daysUntilDue <= 7) {
-                $badgeClass = 'badge-orange';
-                $daysText = $daysUntilDue . ' <script>document.write(translate(\'Days\'));</script>';
+                $iconClass = 'icon--yellow';
+                $badgeClass = 'yellow';
+                $statusLabel = 'Bald fällig';
+                $badgeText = 'in ' . $daysUntilDue . ' Tagen';
             } else {
-                $badgeClass = 'badge-green';
-                $daysText = $daysUntilDue . ' <script>document.write(translate(\'Days\'));</script>';
+                $iconClass = 'icon--green';
+                $badgeClass = 'green';
+                $statusLabel = 'Geplant';
+                $badgeText = 'in ' . $daysUntilDue . ' Tagen';
             }
-            
-            // Icon nur für fällige Aufgaben
-            $actionIcon = $isDue ? 
-                "<i class='fas fa-check action-icon' onclick=\"completeTask('$taskId')\"></i>" : 
-                '';
-            
-            $taskRows .= <<<HTML
+
+            if (!$isDue && $daysUntilDue >= 30) {
+                $iconClass = 'icon--blue';
+            }
+
+            $enrichedTasks[] = array_merge($task, [
+                'titleSafe' => $title,
+                'descriptionSafe' => $description,
+                'intervalSafe' => $interval,
+                'dueDateFormatted' => $dueDateFormatted,
+                'iconClass' => $iconClass,
+                'badgeClass' => $badgeClass,
+                'statusLabel' => $statusLabel,
+                'badgeText' => $badgeText
+            ]);
+        }
+
+        $tasks = $enrichedTasks;
+        $primaryTask = $tasks[0];
+        $primaryDaysText = $primaryTask['isDue']
+            ? ($primaryTask['daysUntilDue'] < 0
+                ? 'Überfällig seit ' . abs($primaryTask['daysUntilDue']) . ' Tagen'
+                : 'Heute fällig')
+            : 'In ' . $primaryTask['daysUntilDue'] . ' Tagen';
+        $primaryButton = $primaryTask['isDue']
+            ? "<button class=\"complete-btn\" onclick=\"completeTask('{$primaryTask['id']}')\">✓ Erledigt</button>"
+            : '';
+
+        $iconPreview = '';
+        $iconLimit = min(4, count($tasks));
+        for ($i = 0; $i < $iconLimit; $i++) {
+            $iconPreview .= "<svg class=\"icon {$tasks[$i]['iconClass']}\" aria-hidden=\"true\"><use xlink:href=\"#icon-maintenance\" href=\"#icon-maintenance\" /></svg>";
+        }
+
+        $cardMList = '';
+        foreach ($tasks as $task) {
+            $cardMList .= <<<HTML
+                <div class="task-pill {$task['badgeClass']}">
+                    <span class="pill-title">{$task['titleSafe']}</span>
+                    <span class="pill-date">{$task['dueDateFormatted']}</span>
+                </div>
+HTML;
+        }
+
+        $tableRows = '';
+        foreach ($tasks as $task) {
+            $badgeClass = $task['badgeClass'];
+            $badgeText = $task['badgeText'];
+            $badgeAttr = $task['isDue']
+                ? "class=\"badge $badgeClass badge-action\" onclick=\"completeTask('{$task['id']}')\""
+                : "class=\"badge $badgeClass\"";
+
+            $tableRows .= <<<HTML
                 <tr>
-                    <td class="task-title-cell">$title</td>
-                    <td class="task-description-cell">$description</td>
-                    <td class="task-interval-cell">$interval</td>
-                    <td class="task-date-cell">$dueDateFormatted</td>
-                    <td class="task-badge-cell"><span class="badge $badgeClass">$daysText</span></td>
-                    <td class="task-action-cell">$actionIcon</td>
+                    <td>
+                        <div class="task-name">{$task['titleSafe']}</div>
+                        <div class="task-description">{$task['descriptionSafe']}</div>
+                    </td>
+                    <td>
+                        <div class="date-line">{$task['dueDateFormatted']}</div>
+                        <div class="interval-line">{$task['intervalSafe']}</div>
+                    </td>
+                    <td><div $badgeAttr>$badgeText</div></td>
                 </tr>
 HTML;
         }
-        
+
         return <<<HTML
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-        padding: 0;       
-    }
-    .container { 
-        max-width: 100%; 
-        margin: 0 auto;       
-    }
-    .header {
-        display: flex;
-        align-items: center;
-        padding: 16px 20px;        
-        border-bottom: 1px solid #3f4147;
-        gap: 12px;
-    }
-    .header-icon {
-        font-size: 24px;
-    }
-    .header-title {
-        font-size: 18px;
-        font-weight: 600;        
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    thead {
-        background: #1e1f22;
-        border-bottom: 1px solid #3f4147;
-    }
-    th {
-        background: var(--accent-color);
-        padding: 12px 20px;
-        text-align: left;
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--content-color);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    tbody tr {
-        border-bottom: 1px solid #3f4147;
-    }
-    tbody tr:last-child {
-        border-bottom: none;
-    }
-    td {
-        padding: 14px 20px;
-        font-size: 15px;
-    }
-    tr:hover td {
-    }
-    .task-title-cell {
-        color: var(--content-color);
-        align-items: center;
-        gap: 12px;
-        min-width: 200px;
-    }
-    .task-title-cell i {
-        display: inline-block;
-        vertical-align: middle;
-    }
-    .task-description-cell {
-        color: var(--content-color);
-        min-width: 250px;
-    }
-    .task-interval-cell {
-        color: var(--content-color);
-        min-width: 120px;
-    }
-    .task-date-cell {
-        color: var(--content-color);
-        min-width: 120px;
-    }
-    .task-badge-cell {
-        text-align: right;
-        min-width: 100px;
-    }
-    .task-action-cell {
-        text-align: center;
-        min-width: 60px;
-        width: 60px;
-    }
-    .badge {
-        display: inline-block;
-        padding: 6px 16px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: 600;
-        color: white;
-    }
-    .badge-green {
-        background: #43b581;
-    }
-    .badge-orange {
-        background: #faa61a;
-    }
-    .badge-red {
-        background: #f04747;
-    }
-    .action-icon {
-        font-size: 16px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        padding: 6px;
-        border-radius: 4px;
-    }
-    .action-icon:hover {
-        background: #3f4147;
-    }
-    .fa-check {
-        color: #43b581;
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .hidden { width: 0; height: 0; position: absolute; }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: transparent; border-radius: 20px; }
+    ::-webkit-scrollbar-thumb:hover { background: #555; }
+    .cardM { display: block; padding: 16px; }
+    .cardL { display: none; padding: 16px; }
+    #grid { text-align: center; }
+    #col1 { width: 40%; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+    #col2 { width: 60%; text-align: left; }
+    .row { display: flex; gap: 16px; align-items: center; }
+    .icon { width: 48px; height: 48px; }
+    .icon--blue { fill: #11A0F3; }
+    .icon--green { fill: #58A906; }
+    .icon--yellow { fill: #FFC107; }
+    .icon--red { fill: #F35A2C; }
+    .icon--gray { fill: #999A9C; }
+    .text { font-size: 14px; }
+    .task-pill-wrapper { margin-top: 16px; }
+    .task-pill { border-radius: 6px; padding: 8px 12px; margin-top: 8px; color: #fff; display: flex; justify-content: space-between; font-size: 13px; }
+    .task-pill.green { background-color: rgba(88, 169, 6, 0.75); }
+    .task-pill.yellow { background-color: rgba(255, 193, 7, 0.85); color: #2d2d2d; }
+    .task-pill.red { background-color: rgba(243, 90, 44, 0.9); }
+    .task-pill.blue { background-color: rgba(17, 160, 243, 0.8); }
+    .pill-title { font-weight: 600; }
+    .pill-date { font-size: 12px; }
+    .primary-title { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+    .primary-desc { font-size: 14px; color: #555; margin-bottom: 12px; }
+    .primary-status { font-weight: 600; margin-top: 8px; }
+    .primary-date { color: #555; margin-top: 4px; }
+    .complete-btn { margin-top: 16px; width: 100%; padding: 12px; border: none; border-radius: 8px; background: linear-gradient(135deg, #58A906, #8BC34A); color: white; font-size: 15px; font-weight: 600; cursor: pointer; }
+    table.wwx { border-collapse: collapse; width: 100%; }
+    .wwx th, .wwx td { vertical-align: middle; text-align: left; padding: 12px 10px; }
+    .wwx tr { border-bottom: 1px solid color-mix(in srgb, currentColor 25%, transparent); }
+    .wwx thead { background: transparent; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .wwx thead th { background: transparent; }
+    .tr4 tr > :last-child { text-align: right; }
+    .badge { border-radius: 8px; min-width: 110px; padding: 6px 10px; text-align: center; float: right; color: white; font-weight: 600; font-size: 13px; }
+    .badge.green { background-color: #58A906; }
+    .badge.yellow { background-color: #FFC107; color: #2d2d2d; }
+    .badge.red { background-color: #F35A2C; }
+    .badge.blue { background-color: #11A0F3; }
+    .badge-action { cursor: pointer; box-shadow: 0 3px 12px rgba(0,0,0,0.1); }
+    .badge-action:hover { transform: translateY(-1px); }
+    .task-name { font-weight: 600; }
+    .task-description { font-size: 13px; color: #6c6c6c; }
+    .interval-line { font-size: 12px; color: #8a8a8a; }
+    @media screen and (min-width: 600px) {
+        .cardM { display: none; }
+        .cardL { display: block; }
+        .icon { width: 32px; height: 32px; }
     }
 </style>
 
-<div class="container">
-    <table id="taskTable">
+<div class="cardM">
+    <div id="grid">
+        <div class="row">
+            <div id="col1">$iconPreview</div>
+            <div id="col2" class="text">
+                <div class="primary-title">{$primaryTask['titleSafe']}</div>
+                <div class="primary-desc">{$primaryTask['descriptionSafe']}</div>
+                <div class="primary-status">Nächste Fälligkeit: $primaryDaysText</div>
+                <div class="primary-date">am {$primaryTask['dueDateFormatted']} ({$primaryTask['intervalSafe']})</div>
+                $primaryButton
+            </div>
+        </div>
+        <div class="task-pill-wrapper">
+            $cardMList
+        </div>
+    </div>
+</div>
+
+<div class="cardL">
+    <table class="wwx tr4">
         <thead>
             <tr>
-                <th><script>document.write(translate('Title'));</script></th>
-                <th><script>document.write(translate('Description'));</script></th>
-                <th><script>document.write(translate('Interval'));</script></th>
-                <th><script>document.write(translate('Due Date'));</script></th>
-                <th><script>document.write(translate('Status'));</script></th>
-                <th><script>document.write(translate('Action'));</script></th>
+                <th>Aufgabe</th>
+                <th>Termin</th>
+                <th>Status</th>
             </tr>
         </thead>
         <tbody>
-            $taskRows
+            $tableRows
         </tbody>
     </table>
 </div>
 
 <script>
     function handleMessage(data) {
-        // Nachricht vom Modul empfangen - Visualisierung aktualisieren
         try {
             var message = JSON.parse(data);
-            console.log('Wartungsplaner: Nachricht empfangen', message);
-            
-            // Bei jeder Änderung die Seite neu laden
-            if (message.action === 'refresh' || 
-                message.action === 'taskCompleted' || 
-                message.action === 'notificationSent') {
-                
-                // Kleine Verzögerung für bessere UX
-                setTimeout(function() {
-                    location.reload();
-                }, 300);
+            if (message.action === 'refresh' || message.action === 'taskCompleted' || message.action === 'notificationSent') {
+                setTimeout(function () { location.reload(); }, 250);
             }
         } catch (e) {
             console.error('Wartungsplaner: Fehler beim Parsen der Nachricht', e);
             location.reload();
         }
     }
-    
+
     function completeTask(taskId) {
-        // Sende Aktion an Modul
         requestAction('CompleteTask', taskId);
-        
-        // Optional: Visuelles Feedback
-        var icon = event.target;
-        if (icon) {
-            icon.style.color = '#43b581';
-            icon.style.transform = 'scale(1.2)';
-        }
     }
 </script>
+
+<svg xmlns="http://www.w3.org/2000/svg" class="hidden">
+    <symbol id="icon-maintenance" viewBox="0 0 24 24">
+        <path d="M2.75 3.5a.75.75 0 0 1 .75-.75h5.25a.75.75 0 0 1 .53.22l2 2a.75.75 0 0 0 .53.22h7.69a.75.75 0 0 1 .75.75v1.75H19.5V6.25h-7.69a2.25 2.25 0 0 1-1.59-.66l-1.81-1.81H4.25V20h3.5v1.5h-4a.75.75 0 0 1-.75-.75V3.5Z" />
+        <path d="M9.25 9A.75.75 0 0 1 10 8.25h11a.75.75 0 0 1 .75.75v12a.75.75 0 0 1-.75.75H10a.75.75 0 0 1-.75-.75V9Zm1.5.75v10.5h9.5V9.75h-9.5Z" />
+        <path d="M12.5 12h6v1.5h-6V12Zm0 3h6v1.5h-6V15Z" />
+    </symbol>
+</svg>
 HTML;
     }
 
