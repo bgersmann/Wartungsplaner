@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-class Wartungsplaner extends IPSModule
+class Wartungsplaner extends IPSModuleStrict
 {
-    public function Create()
+    public function Create(): void
     {
         // Diese Zeile nicht löschen
         parent::Create();
@@ -20,14 +20,17 @@ class Wartungsplaner extends IPSModule
         // Attribute für persistente Daten
         $this->RegisterAttributeString('TaskStates', '[]');
         
-        // HTML SDK aktivieren
-        $this->SetVisualizationType(1); // 1 = HTML
+        // HTML SDK aktivieren - Darstellung bei normaler Kachel und im Vollbild (seit Symcon 9.1)
+        $this->SetVisualizationType(INSTANCE_VISUALIZATION_TYPE_HTML_FULLSCREEN);
     }
 
-    public function ApplyChanges()
+    public function ApplyChanges(): void
     {
         // Diese Zeile nicht löschen
         parent::ApplyChanges();
+
+        // Visualisierungstyp auch für bestehende Instanzen setzen (normale Kachel + Vollbild)
+        $this->SetVisualizationType(INSTANCE_VISUALIZATION_TYPE_HTML_FULLSCREEN);
 
         // Timer für tägliche Benachrichtigung einrichten
         $this->SetDailyTimer();
@@ -39,7 +42,7 @@ class Wartungsplaner extends IPSModule
         $this->UpdateVisualizationValue(json_encode(['action' => 'refresh']));
     }
     
-    private function RecalculateTaskStates()
+    private function RecalculateTaskStates(): void
     {
         $tasks = json_decode($this->ReadPropertyString('Tasks'), true);
         $taskStates = json_decode($this->ReadAttributeString('TaskStates'), true);
@@ -54,29 +57,8 @@ class Wartungsplaner extends IPSModule
         foreach ($tasks as $index => $task) {
             $taskId = 'task_' . $index;
             
-            // Unterstütze beide Formate: dd.mm.yyyy und yyyy-mm-dd
-            if (isset($task['StartDate']) && !empty($task['StartDate'])) {
-                $startDateStr = $task['StartDate'];
-                // Prüfe Format und konvertiere
-                if (strpos($startDateStr, '.') !== false) {
-                    // Deutsches Format: dd.mm.yyyy
-                    $parts = explode('.', $startDateStr);
-                    if (count($parts) == 3) {
-                        $newStartDate = mktime(0, 0, 0, (int)$parts[1], (int)$parts[0], (int)$parts[2]);
-                    } else {
-                        $newStartDate = $today;
-                    }
-                } else {
-                    // ISO Format: yyyy-mm-dd
-                    $newStartDate = strtotime($startDateStr);
-                    if ($newStartDate === false) {
-                        $newStartDate = $today;
-                    }
-                }
-            } else {
-                $newStartDate = $today;
-            }
-            
+            $newStartDate = $this->ParseStartDate($task);
+
             // Wenn Task neu ist oder Startdatum sich geändert hat, neu berechnen
             if (!isset($taskStates[$taskId]) || $taskStates[$taskId]['startDate'] != $newStartDate) {
                 $taskStates[$taskId] = [
@@ -93,7 +75,7 @@ class Wartungsplaner extends IPSModule
         }
     }
 
-    private function SetDailyTimer()
+    private function SetDailyTimer(): void
     {
         $hour = $this->ReadPropertyInteger('NotificationTime');
         
@@ -110,13 +92,13 @@ class Wartungsplaner extends IPSModule
         $this->SetTimerInterval('DailyNotification', $interval * 1000);
     }
 
-    public function CheckDueTasks()
+    public function CheckDueTasks(): int
     {
         $tasks = json_decode($this->ReadPropertyString('Tasks'), true);
         $taskStates = json_decode($this->ReadAttributeString('TaskStates'), true);
         
         if (empty($tasks)) {
-            return;
+            return 0;
         }
 
         $today = time();
@@ -128,9 +110,9 @@ class Wartungsplaner extends IPSModule
             // Prüfe ob Task-Status existiert, sonst initialisiere
             if (!isset($taskStates[$taskId])) {
                 $taskStates[$taskId] = [
-                    'startDate' => isset($task['StartDate']) ? strtotime($task['StartDate']) : $today,
+                    'startDate' => $this->ParseStartDate($task),
                     'nextDueDate' => $this->CalculateNextDueDate(
-                        isset($task['StartDate']) ? strtotime($task['StartDate']) : $today,
+                        $this->ParseStartDate($task),
                         $task['Interval']
                     ),
                     'completed' => false
@@ -159,7 +141,7 @@ class Wartungsplaner extends IPSModule
         return $notificationsSent;
     }
 
-    private function SendNotification(string $title, string $description, string $taskId)
+    private function SendNotification(string $title, string $description, string $taskId): void
     {
         $webFrontID = $this->ReadPropertyInteger('WebFrontID');
         
@@ -174,6 +156,32 @@ class Wartungsplaner extends IPSModule
                 0
             );
         }
+    }
+
+    private function ParseStartDate(array $task): int
+    {
+        // Unterstütze beide Formate: dd.mm.yyyy und yyyy-mm-dd
+        // Ungültige oder leere Angaben fallen auf das heutige Datum zurück
+        $startDateStr = trim((string) ($task['StartDate'] ?? ''));
+        if ($startDateStr === '') {
+            return time();
+        }
+
+        if (preg_match('/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/', $startDateStr, $m)) {
+            // Deutsches Format: dd.mm.yyyy
+            if (checkdate((int) $m[2], (int) $m[1], (int) $m[3])) {
+                return mktime(0, 0, 0, (int) $m[2], (int) $m[1], (int) $m[3]);
+            }
+        } else {
+            // ISO Format: yyyy-mm-dd (bzw. alles, was strtotime versteht)
+            $timestamp = strtotime($startDateStr);
+            if ($timestamp !== false) {
+                return $timestamp;
+            }
+        }
+
+        $this->SendDebug('ParseStartDate', 'Ungültiges Startdatum: ' . $startDateStr, 0);
+        return time();
     }
 
     private function CalculateNextDueDate(int $startDate, string $interval): int
@@ -238,18 +246,18 @@ class Wartungsplaner extends IPSModule
         return $current;
     }
 
-    public function RequestAction($Ident, $Value)
+    public function RequestAction(string $Ident, mixed $Value): void
     {
         switch ($Ident) {
             case 'CompleteTask':
-                $this->CompleteTaskAction($Value);
+                $this->CompleteTaskAction((string) $Value);
                 break;
             default:
                 throw new Exception('Invalid ident');
         }
     }
 
-    private function CompleteTaskAction(string $taskId)
+    private function CompleteTaskAction(string $taskId): void
     {
         $tasks = json_decode($this->ReadPropertyString('Tasks'), true);
         $taskStates = json_decode($this->ReadAttributeString('TaskStates'), true);
@@ -284,13 +292,13 @@ class Wartungsplaner extends IPSModule
         ]));
     }
 
-    public function CompleteTask(string $taskId)
+    public function CompleteTask(string $taskId): bool
     {
         $this->CompleteTaskAction($taskId);
         return true;
     }
 
-    public function GetTaskList()
+    public function GetTaskList(): string
     {
         $tasks = json_decode($this->ReadPropertyString('Tasks'), true);
         $taskStates = json_decode($this->ReadAttributeString('TaskStates'), true);
@@ -308,9 +316,9 @@ class Wartungsplaner extends IPSModule
             // Initialisiere Task-Status falls nicht vorhanden
             if (!isset($taskStates[$taskId])) {
                 $taskStates[$taskId] = [
-                    'startDate' => isset($task['StartDate']) ? strtotime($task['StartDate']) : $today,
+                    'startDate' => $this->ParseStartDate($task),
                     'nextDueDate' => $this->CalculateNextDueDate(
-                        isset($task['StartDate']) ? strtotime($task['StartDate']) : $today,
+                        $this->ParseStartDate($task),
                         $task['Interval']
                     ),
                     'completed' => false
@@ -345,7 +353,7 @@ class Wartungsplaner extends IPSModule
         return json_encode($taskList);
     }
 
-    public function GetVisualizationTile()
+    public function GetVisualizationTile(): string
     {
         $data = $this->GetTaskData();
         
@@ -370,9 +378,9 @@ class Wartungsplaner extends IPSModule
             // Initialisiere Task-Status falls nicht vorhanden
             if (!isset($taskStates[$taskId])) {
                 $taskStates[$taskId] = [
-                    'startDate' => isset($task['StartDate']) ? strtotime($task['StartDate']) : $today,
+                    'startDate' => $this->ParseStartDate($task),
                     'nextDueDate' => $this->CalculateNextDueDate(
-                        isset($task['StartDate']) ? strtotime($task['StartDate']) : $today,
+                        $this->ParseStartDate($task),
                         $task['Interval']
                     ),
                     'completed' => false
@@ -515,7 +523,8 @@ HTML;
         return <<<HTML
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    html, body { height: 100%; }
+    body { margin: 0; overflow-y: auto; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
     .hidden { width: 0; height: 0; position: absolute; }
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -661,7 +670,7 @@ HTML;
 HTML;
     }
 
-    public function GetConfigurationForm()
+    public function GetConfigurationForm(): string
     {
         $form = [
             'elements' => [

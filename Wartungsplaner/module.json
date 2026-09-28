@@ -4,6 +4,7 @@
     "type": 3,
     "vendor": "",
     "aliases": ["Wartungsplaner"],
+    "url": "https://github.com/bgersmann/Wartungsplaner",
     "parentRequirements": [],
     "childRequirements": [],
     "implemented": [],

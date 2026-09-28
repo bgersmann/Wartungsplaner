@@ -2,9 +2,9 @@
     "id": "{B8C9D5E7-4F3A-2B1C-9A8D-7E6F5C4B3A2D}",
     "name": "Wartungsplaner",
     "author": "Custom",
-    "url": "",
+    "url": "https://github.com/bgersmann/Wartungsplaner",
     "compatibility": {
-        "version": "6.0"
+        "version": "9.1"
     },
     "version": "1.0",
     "build": 0,

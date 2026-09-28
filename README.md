@@ -40,8 +40,8 @@ Ein IP-Symcon Modul zur Planung und Verwaltung von Wartungsaufgaben mit automati
 
 ### Visualisierung einrichten
 
-1. Fügen Sie in Ihrem WebFront eine HTML-Box hinzu
-2. Verknüpfen Sie diese mit dem Wartungsplaner-Modul
+1. Platzieren Sie die Wartungsplaner-Instanz in einer Kategorie, die in der Kachel-Visualisierung angezeigt wird
+2. Die Instanz wird über das HTML-SDK als eigene Kachel dargestellt – sowohl als normale Kachel als auch im Vollbild (geöffnete Kachel, ab Symcon 9.1)
 3. Die HTML-Visualisierung zeigt automatisch alle Aufgaben an mit:
    - Farblicher Kennzeichnung (Rot = Fällig, Orange = Bald fällig, Grün = Geplant)
    - Fälligkeitsdatum und verbleibende Tage
@@ -98,7 +98,7 @@ $taskList = WP_GetTaskList($instanceId);
 - **Modul-ID**: {A7B6C5D4-3E2F-1A0B-8C9D-6E5F4A3B2C1D}
 - **Library-ID**: {B8C9D5E7-4F3A-2B1C-9A8D-7E6F5C4B3A2D}
 - **Prefix**: WP
-- **Mindest-Version**: IP-Symcon 6.0
+- **Mindest-Version**: IP-Symcon 9.1 (HTML-SDK mit Vollbild-Darstellung)
 
 ## Troubleshooting
 
