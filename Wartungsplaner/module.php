@@ -471,28 +471,22 @@ class Wartungsplaner extends IPSModuleStrict
         }
 
         $tasks = $enrichedTasks;
-        $primaryTask = $tasks[0];
-        $primaryDaysText = $primaryTask['isDue']
-            ? ($primaryTask['daysUntilDue'] < 0
-                ? 'Überfällig seit ' . abs($primaryTask['daysUntilDue']) . ' Tagen'
-                : 'Heute fällig')
-            : 'In ' . $primaryTask['daysUntilDue'] . ' Tagen';
-        $primaryButton = $primaryTask['isDue']
-            ? "<button class=\"complete-btn\" onclick=\"completeTask('{$primaryTask['id']}')\">✓ Erledigt</button>"
-            : '';
 
-        $iconPreview = '';
-        $iconLimit = min(4, count($tasks));
-        for ($i = 0; $i < $iconLimit; $i++) {
-            $iconPreview .= "<svg class=\"icon {$tasks[$i]['iconClass']}\" aria-hidden=\"true\"><use xlink:href=\"#icon-maintenance\" href=\"#icon-maintenance\" /></svg>";
-        }
-
+        // Mobile Ansicht: eine Karte pro Aufgabe, fällige mit eigenem Erledigt-Button
         $cardMList = '';
         foreach ($tasks as $task) {
+            $button = $task['isDue']
+                ? "<button class=\"complete-btn\" onclick=\"completeTask('{$task['id']}')\">✓ Erledigt</button>"
+                : '';
             $cardMList .= <<<HTML
-                <div class="task-pill {$task['badgeClass']}">
-                    <span class="pill-title">{$task['titleSafe']}</span>
-                    <span class="pill-date">{$task['dueDateFormatted']}</span>
+                <div class="task-card {$task['badgeClass']}">
+                    <div class="task-card-head">
+                        <div class="task-name">{$task['titleSafe']}</div>
+                        <div class="badge {$task['badgeClass']}">{$task['badgeText']}</div>
+                    </div>
+                    <div class="task-description">{$task['descriptionSafe']}</div>
+                    <div class="interval-line">{$task['dueDateFormatted']} · {$task['intervalSafe']}</div>
+                    $button
                 </div>
 HTML;
         }
@@ -530,31 +524,16 @@ HTML;
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: transparent; border-radius: 20px; }
     ::-webkit-scrollbar-thumb:hover { background: #555; }
-    .cardM { display: block; padding: 16px; }
+    .cardM { display: block; padding: 12px; }
     .cardL { display: none; padding: 16px; }
-    #grid { text-align: center; }
-    #col1 { width: 40%; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
-    #col2 { width: 60%; text-align: left; }
-    .row { display: flex; gap: 16px; align-items: center; }
-    .icon { width: 48px; height: 48px; }
-    .icon--blue { fill: #11A0F3; }
-    .icon--green { fill: #58A906; }
-    .icon--yellow { fill: #FFC107; }
-    .icon--red { fill: #F35A2C; }
-    .icon--gray { fill: #999A9C; }
-    .text { font-size: 14px; }
-    .task-pill-wrapper { margin-top: 16px; }
-    .task-pill { border-radius: 6px; padding: 8px 12px; margin-top: 8px; color: #fff; display: flex; justify-content: space-between; font-size: 13px; }
-    .task-pill.green { background-color: rgba(88, 169, 6, 0.75); }
-    .task-pill.yellow { background-color: rgba(255, 193, 7, 0.85); color: #2d2d2d; }
-    .task-pill.red { background-color: rgba(243, 90, 44, 0.9); }
-    .task-pill.blue { background-color: rgba(17, 160, 243, 0.8); }
-    .pill-title { font-weight: 600; }
-    .pill-date { font-size: 12px; }
-    .primary-title { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
-    .primary-desc { font-size: 14px; color: #555; margin-bottom: 12px; }
-    .primary-status { font-weight: 600; margin-top: 8px; }
-    .primary-date { color: #555; margin-top: 4px; }
+    .task-card { border-left: 4px solid; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; background: color-mix(in srgb, currentColor 6%, transparent); }
+    .task-card.green { border-left-color: #58A906; }
+    .task-card.yellow { border-left-color: #FFC107; }
+    .task-card.red { border-left-color: #F35A2C; }
+    .task-card.blue { border-left-color: #11A0F3; }
+    .task-card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .task-card .badge { float: none; min-width: 0; white-space: nowrap; }
+    .task-card .complete-btn { margin-top: 10px; }
     .complete-btn { margin-top: 16px; width: 100%; padding: 12px; border: none; border-radius: 8px; background: linear-gradient(135deg, #58A906, #8BC34A); color: white; font-size: 15px; font-weight: 600; cursor: pointer; }
     table.wwx { border-collapse: collapse; width: 100%; }
     .wwx th, .wwx td { vertical-align: middle; text-align: left; padding: 12px 10px; }
@@ -575,26 +554,11 @@ HTML;
     @media screen and (min-width: 600px) {
         .cardM { display: none; }
         .cardL { display: block; }
-        .icon { width: 32px; height: 32px; }
     }
 </style>
 
 <div class="cardM">
-    <div id="grid">
-        <div class="row">
-            <div id="col1">$iconPreview</div>
-            <div id="col2" class="text">
-                <div class="primary-title">{$primaryTask['titleSafe']}</div>
-                <div class="primary-desc">{$primaryTask['descriptionSafe']}</div>
-                <div class="primary-status">Nächste Fälligkeit: $primaryDaysText</div>
-                <div class="primary-date">am {$primaryTask['dueDateFormatted']} ({$primaryTask['intervalSafe']})</div>
-                $primaryButton
-            </div>
-        </div>
-        <div class="task-pill-wrapper">
-            $cardMList
-        </div>
-    </div>
+    $cardMList
 </div>
 
 <div class="cardL">
@@ -629,14 +593,6 @@ HTML;
         requestAction('CompleteTask', taskId);
     }
 </script>
-
-<svg xmlns="http://www.w3.org/2000/svg" class="hidden">
-    <symbol id="icon-maintenance" viewBox="0 0 24 24">
-        <path d="M2.75 3.5a.75.75 0 0 1 .75-.75h5.25a.75.75 0 0 1 .53.22l2 2a.75.75 0 0 0 .53.22h7.69a.75.75 0 0 1 .75.75v1.75H19.5V6.25h-7.69a2.25 2.25 0 0 1-1.59-.66l-1.81-1.81H4.25V20h3.5v1.5h-4a.75.75 0 0 1-.75-.75V3.5Z" />
-        <path d="M9.25 9A.75.75 0 0 1 10 8.25h11a.75.75 0 0 1 .75.75v12a.75.75 0 0 1-.75.75H10a.75.75 0 0 1-.75-.75V9Zm1.5.75v10.5h9.5V9.75h-9.5Z" />
-        <path d="M12.5 12h6v1.5h-6V12Zm0 3h6v1.5h-6V15Z" />
-    </symbol>
-</svg>
 HTML;
     }
 
