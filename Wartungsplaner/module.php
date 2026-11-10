@@ -526,11 +526,7 @@ HTML;
     ::-webkit-scrollbar-thumb:hover { background: #555; }
     .cardM { display: block; padding: 12px; }
     .cardL { display: none; padding: 16px; }
-    .task-card { border-left: 4px solid; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; background: color-mix(in srgb, currentColor 6%, transparent); }
-    .task-card.green { border-left-color: #58A906; }
-    .task-card.yellow { border-left-color: #FFC107; }
-    .task-card.red { border-left-color: #F35A2C; }
-    .task-card.blue { border-left-color: #11A0F3; }
+    .task-card { padding: 12px 10px; border-bottom: 1px solid color-mix(in srgb, currentColor 25%, transparent); }
     .task-card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
     .task-card .badge { float: none; min-width: 0; white-space: nowrap; }
     .task-card .complete-btn { margin-top: 10px; }
